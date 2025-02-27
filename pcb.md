@@ -244,13 +244,12 @@ LED (-) --- GND
 
 ## Final Design Considerations
 
-## ? ESP32-WROOM-32D centrally placed.  
-? 12V, 5V, and 3.3V power rails routed cleanly.  
-? High-current traces (for MOSFET, relay) should be at least 1.5mm wide.  
-? Keep ADC traces short to minimize noise.
-
-? Route ADC traces separately to avoid noise.  
-? Use optocoupler (PC817) for 110V relay isolation.  
-? Use high-current traces (=1.5mm) for relay and MOSFET.  
-? Use a ground plane to reduce EMI.  
-? Keep ESP32 power (3.3V) separate from relay power (5V).
+##  ESP32-WROOM-32D centrally placed.  
+ 12V, 5V, and 3.3V power rails routed cleanly.  
+ High-current traces (for MOSFET, relay) should be at least 1.5mm wide.  
+ Keep ADC traces short to minimize noise.
+ Route ADC traces separately to avoid noise.  
+ Use optocoupler (PC817) for 110V relay isolation.  
+ Use high-current traces (=1.5mm) for relay and MOSFET.  
+ Use a ground plane to reduce EMI.  
+ Keep ESP32 power (3.3V) separate from relay power (5V).
