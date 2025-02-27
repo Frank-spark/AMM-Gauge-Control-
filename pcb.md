@@ -19,9 +19,9 @@ This board layout is designed to interface an ESP32-WROOM-32D with a float senso
 *   Capacitors:
     
 
-*   100µF electrolytic (12V rail) for stability.
+*   100ÂµF electrolytic (12V rail) for stability.
     
-*   10µF + 0.1µF ceramic (3.3V ESP32 supply) for noise filtering.
+*   10ÂµF + 0.1ÂµF ceramic (3.3V ESP32 supply) for noise filtering.
     
 
 * * *
@@ -51,7 +51,7 @@ This board layout is designed to interface an ESP32-WROOM-32D with a float senso
 *   Connects to GPIO 35 (ESP32 ADC Input).
     
 
-*   Purpose: Monitors temperature to trigger power cutoff if it exceeds 60°C.
+*   Purpose: Monitors temperature to trigger power cutoff if it exceeds 60Â°C.
     
 
 * * *
@@ -163,7 +163,7 @@ Voltage Divider Circuit:
 
 *     
     
-*   Purpose: Reads temperature and cuts power if it exceeds 60°C.
+*   Purpose: Reads temperature and cuts power if it exceeds 60Â°C.
     
 
 * * *
@@ -244,13 +244,12 @@ LED (-) --- GND
 
 ## Final Design Considerations
 
-## ? ESP32-WROOM-32D centrally placed.  
-? 12V, 5V, and 3.3V power rails routed cleanly.  
-? High-current traces (for MOSFET, relay) should be at least 1.5mm wide.  
-? Keep ADC traces short to minimize noise.
-
-? Route ADC traces separately to avoid noise.  
-? Use optocoupler (PC817) for 110V relay isolation.  
-? Use high-current traces (=1.5mm) for relay and MOSFET.  
-? Use a ground plane to reduce EMI.  
-? Keep ESP32 power (3.3V) separate from relay power (5V).
+##  ESP32-WROOM-32D centrally placed.  
+ 12V, 5V, and 3.3V power rails routed cleanly.  
+ High-current traces (for MOSFET, relay) should be at least 1.5mm wide.  
+ Keep ADC traces short to minimize noise.
+ Route ADC traces separately to avoid noise.  
+ Use optocoupler (PC817) for 110V relay isolation.  
+ Use high-current traces (=1.5mm) for relay and MOSFET.  
+ Use a ground plane to reduce EMI.  
+ Keep ESP32 power (3.3V) separate from relay power (5V).
