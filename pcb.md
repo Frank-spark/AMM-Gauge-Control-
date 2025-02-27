@@ -19,9 +19,9 @@ This board layout is designed to interface an ESP32-WROOM-32D with a float senso
 *   Capacitors:
     
 
-*   100µF electrolytic (12V rail) for stability.
+*   100ÂµF electrolytic (12V rail) for stability.
     
-*   10µF + 0.1µF ceramic (3.3V ESP32 supply) for noise filtering.
+*   10ÂµF + 0.1ÂµF ceramic (3.3V ESP32 supply) for noise filtering.
     
 
 * * *
@@ -51,7 +51,7 @@ This board layout is designed to interface an ESP32-WROOM-32D with a float senso
 *   Connects to GPIO 35 (ESP32 ADC Input).
     
 
-*   Purpose: Monitors temperature to trigger power cutoff if it exceeds 60°C.
+*   Purpose: Monitors temperature to trigger power cutoff if it exceeds 60Â°C.
     
 
 * * *
@@ -163,7 +163,7 @@ Voltage Divider Circuit:
 
 *     
     
-*   Purpose: Reads temperature and cuts power if it exceeds 60°C.
+*   Purpose: Reads temperature and cuts power if it exceeds 60Â°C.
     
 
 * * *
