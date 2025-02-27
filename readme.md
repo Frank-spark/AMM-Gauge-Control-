@@ -1,4 +1,4 @@
-### **README for `gaugecontrol.cpp`**
+
 ---
 ## **Project: ESP32 Gauge Control with Float Sensor and Safety Cutoff**
 
