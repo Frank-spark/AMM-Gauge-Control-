@@ -1,255 +1,150 @@
 ### PCB Layout Description for Electrical Engineer
 
-This board layout is designed to interface an ESP32-WROOM-32D with a float sensor (240-30O), thermistor (10kO NTC, B3950), and PWM-controlled gauge, while also controlling a 110V AC power relay. The system operates on a 12V DC power source.
+This board layout is designed to interface an ESP32-WROOM-32D with a float sensor (240-30Ω) and PWM-controlled gauge, while providing soft-start control (0-5V) for H2 power supplies. The system operates on 12V DC power from the H2 board's gauge light circuit.
 
 * * *
 
 ## 1\. Power System
 
-*   Input: 12V DC power supply.
+*   Input: 12V DC from H2 board gauge light
     
 *   Voltage Regulation:
-    
-
-*   Buck Converter (12V ? 3.3V): Used to power the ESP32.
-    
-*   Step-Down Regulator (12V ? 5V): Powers the relay module.
-    
-
-*   Capacitors:
-    
-
-*   100µF electrolytic (12V rail) for stability.
-    
-*   10µF + 0.1µF ceramic (3.3V ESP32 supply) for noise filtering.
-    
+    *   Buck Converter (12V → 3.3V): Powers the ESP32
+    *   Filtering Capacitors:
+        *   100µF electrolytic (12V rail)
+        *   10µF + 0.1µF ceramic (3.3V ESP32 supply)
 
 * * *
 
-## 2\. Float Sensor Interface (240-30O)
+## 2\. Float Sensor Interface (240-30Ω)
 
 *   Voltage Divider Circuit:
-    
-
-*   10kO Pull-up Resistor (3.3V ? Sensor ? ADC).
-    
-*   Connects to GPIO 34 (ESP32 ADC Input).
-    
-
-*   Purpose: Converts sensor resistance to a voltage readable by ESP32.
-    
+    *   10kΩ Pull-up Resistor (3.3V → Sensor → ADC)
+    *   Connects to GPIO 34 (ESP32 ADC Input)
+    *   0.1µF ceramic capacitor for noise filtering
+    *   Purpose: Converts sensor resistance to voltage readable by ESP32
 
 * * *
 
-## 3\. Thermistor Interface (10kO NTC, B3950)
+## 3\. H2 Signal Input (12V)
 
-*   Voltage Divider Circuit:
-    
-
-*   10kO Pull-up Resistor (3.3V ? Thermistor ? ADC).
-    
-*   Connects to GPIO 35 (ESP32 ADC Input).
-    
-
-*   Purpose: Monitors temperature to trigger power cutoff if it exceeds 60°C.
-    
+*   Level Shifter Circuit:
+    *   Input: 12V from H2 board coil signal
+    *   Output: 3.3V to ESP32 GPIO 35
+    *   Components:
+        *   Voltage divider or dedicated level shifter IC
+        *   10kΩ pull-down resistor on ESP32 input
+        *   Protection diode for reverse voltage
+    *   Purpose: Safely converts 12V H2 signal to 3.3V logic level
 
 * * *
 
-## 4\. Gauge Control (PWM Output)
+## 4\. Power Supply Control (0-5V Output)
+
+*   PWM to Analog Circuit:
+    *   Input: ESP32 GPIO 27 (PWM)
+    *   Output: 0-5V DC to power supply CC input
+    *   Components:
+        *   RC low-pass filter (10kΩ + 10µF)
+        *   Op-amp buffer (e.g., MCP6002)
+        *   Precision voltage reference (optional)
+    *   Purpose: Converts PWM to clean 0-5V control signal
+
+* * *
+
+## 5\. Gauge Control (PWM Output)
 
 *   MOSFET Driver:
-    
-
-*   MOSFET: IRLB8721 (N-channel, logic-level).
-    
-*   10kO Pull-down Resistor (MOSFET Gate to GND).
-    
-*   1kO Series Resistor (ESP32 GPIO 25 ? MOSFET Gate).
-    
-*   Gauge Ground (-) connects to MOSFET Drain.
-    
-
-*   Purpose: Converts ESP32 PWM signal to variable resistance for smooth gauge control.
-    
+    *   MOSFET: IRLB8721 (N-channel, logic-level)
+    *   10kΩ Pull-down Resistor (Gate to GND)
+    *   1kΩ Series Resistor (ESP32 GPIO 25 → Gate)
+    *   Gauge Ground (-) connects to MOSFET Drain
+    *   Purpose: PWM control for smooth gauge movement
 
 * * *
 
-## 5\. 110V AC Power Control
+## 6\. Warning Indicator
 
-*   Solid-State Relay (SSR) or Mechanical Relay (5V Coil, 110V AC Load)
-    
-
-*   Control: ESP32 GPIO 27 (KILL\_PIN) switches relay ON/OFF.
-    
-*   Flyback Diode (1N4007): Across relay coil for protection.
-    
-*   Optocoupler (PC817): Isolates ESP32 from 110V relay circuit.
-    
-*   Transistor (2N2222): Drives the relay coil.
-    
-*   1kO Base Resistor: (ESP32 GPIO ? Transistor Base).
-    
-
-*   Purpose: Turns off 110V AC power when conditions are met (low fill level or high temperature).
-    
+*   LED Circuit:
+    *   330Ω current-limiting resistor
+    *   LED connected to GPIO 26
+    *   Purpose: Visual warning for low tank level
 
 * * *
 
-## 6\. Indicator Backlight (Low-Level Warning)
-
-*   LED Backlight Control (GPIO 26)
-    
-
-*   MOSFET or NPN Transistor (2N2222).
-    
-*   330O Series Resistor (LED protection).
-    
-*   Blinking controlled by ESP32 logic.
-    
-
-*   Purpose: Flashes when the tank level is low.
-    
-
-* * *
-
-  
-  
-  
-  
-  
-  
-
-### ESP32-WROOM-32D Pin Assignments for PCB Design
-
-This table outlines the exact pin connections for your ESP32-WROOM-32D, including power, sensor inputs, and control outputs.
-
-* * *
-
-### 1\. Power Connections
+### ESP32-WROOM-32D Pin Assignments
 
 | ESP32 Pin | Function | Connected To |
-| --- | --- | --- |
-| 3.3V | ESP32 Power | 3.3V from Buck Converter |
-| GND | Ground | Common GND |
-| VIN | Not used (ESP32 powered from 3.3V) |  |
-
-* * *
-
-### 2\. Float Sensor (240-30O)
-
-| ESP32 Pin | Function | Connected To |
-| --- | --- | --- |
-| GPIO 34 | ADC Input (Float Sensor) | Voltage divider with 10kO resistor |
-
-Voltage Divider Circuit:  
-(3.3V) --- (10kO Resistor) ---( ADC Pin GPIO 34 ) --- (Float Sensor) --- (GND)
-
-*     
-    
-*   Purpose: Reads resistance changes from float sensor and converts to gauge movement.
-    
-
-* * *
-
-### 3\. Thermistor (10kO NTC, B3950)
-
-| ESP32 Pin | Function | Connected To |
-| --- | --- | --- |
-| GPIO 35 | ADC Input (Thermistor) | Voltage divider with 10kO resistor |
-
-Voltage Divider Circuit:  
-(3.3V) --- (10kO Resistor) ---( ADC Pin GPIO 35 ) --- (Thermistor) --- (GND)
-
-*     
-    
-*   Purpose: Reads temperature and cuts power if it exceeds 60°C.
-    
-
-* * *
-
-### 4\. Gauge Control (PWM Output)
-
-| ESP32 Pin | Function | Connected To |
-| --- | --- | --- |
-| GPIO 25 | PWM Output (Gauge) | MOSFET Gate (IRLB8721) via 1kO resistor |
-
-MOSFET Circuit:  
-ESP32 GPIO 25 --- (1kO Resistor) --- (MOSFET Gate)
-
-MOSFET Source --- GND
-
-MOSFET Drain --- Gauge Ground (-)
-
-*     
-    
-*   Purpose: Provides PWM control for smooth gauge movement.
-    
-
-* * *
-
-### 5\. 110V AC Power Control
-
-| ESP32 Pin | Function | Connected To |
-| --- | --- | --- |
-| GPIO 27 | KILL_PIN (Power Cutoff) | Relay Module or Solid-State Relay |
-
-Relay Control Circuit (With Optocoupler & Transistor):  
-ESP32 GPIO 27 --- (1kO Resistor) --- PC817 Optocoupler Input
-
-PC817 Output --- (2N2222 Transistor Base)
-
-Transistor Collector --- Relay Coil
-
-Relay Coil --- 5V Power
-
-*     
-    
-*   Purpose: Turns off 110V power when level is too low or temperature is too high.
-    
-
-* * *
-
-### 6\. Indicator Backlight (Low-Level Warning)
-
-| ESP32 Pin | Function | Connected To |
-| --- | --- | --- |
-| GPIO 26 | Backlight Control | LED via 330O Resistor |
-
-Backlight LED Circuit:  
-ESP32 GPIO 26 --- (330O Resistor) --- LED (+)
-
-LED (-) --- GND
-
-*     
-    
-*   Purpose: Blinks LED when fill level is too low.
-    
-
-* * *
-
-## ESP32 Pin Summary
-
-| ESP32 Pin | Function | Description |
-| --- | --- | --- |
-| 3.3V | Power | 3.3V Supply from Buck Converter |
+|-----------|----------|--------------|
+| VIN | Power Input | 12V (via protection diode) |
+| 3.3V | Regulated Power | 3.3V from Buck Converter |
 | GND | Ground | Common Ground |
-| GPIO 34 | Float Sensor Input | Reads resistance (240-30O) via ADC |
-| GPIO 35 | Thermistor Input | Reads temperature (10kO NTC) |
-| GPIO 25 | PWM Output (Gauge) | Controls gauge via MOSFET (IRLB8721) |
-| GPIO 27 | KILL_PIN (Relay) | Controls 110V relay via transistor |
-| GPIO 26 | Backlight Control | Blinks LED at low fill levels |
+| GPIO 34 | ADC Input | Float Sensor Voltage Divider |
+| GPIO 35 | Digital Input | H2 Signal (via level shifter) |
+| GPIO 25 | PWM Output | Gauge MOSFET Gate |
+| GPIO 27 | PWM Output | Power Supply Control Circuit |
+| GPIO 26 | Digital Output | Warning LED |
 
 * * *
 
-## Final Design Considerations
+### Power Supply Control Circuit Detail
 
-##  ESP32-WROOM-32D centrally placed.  
- 12V, 5V, and 3.3V power rails routed cleanly.  
- High-current traces (for MOSFET, relay) should be at least 1.5mm wide.  
- Keep ADC traces short to minimize noise.
- Route ADC traces separately to avoid noise.  
- Use optocoupler (PC817) for 110V relay isolation.  
- Use high-current traces (=1.5mm) for relay and MOSFET.  
- Use a ground plane to reduce EMI.  
- Keep ESP32 power (3.3V) separate from relay power (5V).
+```
+ESP32 GPIO 27 --[10kΩ]--+--[10µF]--GND
+                        |
+                        +--[Buffer Op-amp]---> To Power Supply CC
+```
+
+*   PWM Frequency: 10kHz
+*   Filter cutoff: ~1.6Hz (for smooth ramping)
+*   Output voltage range: 0-5V DC
+*   Ramp time: 5 seconds (0 to full scale)
+
+* * *
+
+### PCB Layout Guidelines
+
+1. **Power Distribution:**
+    *   Separate ground planes for analog and digital
+    *   Wide traces for 12V input
+    *   Star ground configuration
+
+2. **Signal Routing:**
+    *   Keep analog signals away from PWM
+    *   Short traces for ADC inputs
+    *   Ground plane under level shifter
+
+3. **Component Placement:**
+    *   ESP32 module centrally located
+    *   Power components near input
+    *   Analog section isolated from digital
+
+4. **Thermal Considerations:**
+    *   Copper pour for MOSFET cooling
+    *   Adequate ventilation for buck converter
+
+5. **Protection Features:**
+    *   Reverse polarity protection on 12V input
+    *   TVS diodes on signal inputs
+    *   Fuse for overcurrent protection
+
+* * *
+
+### Board Stack-up
+
+*   2-layer board minimum
+*   1oz copper recommended
+*   FR4 material
+*   Board size: Approximately 2" x 3"
+
+* * *
+
+### Testing Points
+
+Include test points for:
+*   12V input
+*   3.3V regulated
+*   H2 signal (both 12V and 3.3V sides)
+*   Power supply control output
+*   Float sensor input
+*   Ground reference

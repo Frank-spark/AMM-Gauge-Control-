@@ -4,13 +4,19 @@
 // Pin Definitions
 #define MOSFET_PWM_PIN 25   // Controls gauge needle
 #define BACKLIGHT_PIN 26    // Blinks when level is low
-#define KILL_PIN 27         // Cuts power when level is low or temp is high
-#define FLOAT_SENSOR_PIN 34 // Reads float sensor voltage
+#define PS_CONTROL_PIN 27    // 0-5V control for power supply
+#define FLOAT_SENSOR_PIN 34  // Reads float sensor voltage
+#define H2_SIGNAL_PIN 35     // Input from H2 board coil plug (12V)
 
 // PWM Configuration
 #define PWM_FREQUENCY 5000  // PWM frequency in Hz
 #define PWM_RESOLUTION LEDC_TIMER_8_BIT  // 8-bit for gauge control
 #define PWM_CHANNEL LEDC_CHANNEL_0
+
+// PWM Configuration for Power Supply Control
+#define PS_PWM_FREQ 10000
+#define PS_PWM_RES LEDC_TIMER_8_BIT
+#define PS_PWM_CHANNEL LEDC_CHANNEL_1
 
 // Float Sensor Resistance Range
 #define MAX_RESISTANCE 240  // Ohms (Empty Tank)
@@ -29,6 +35,9 @@
 unsigned long lastBlinkTime = 0;
 bool blinkState = false;
 float smoothedDuty = MIN_DUTY; // Start at lowest gauge position
+
+bool pem_running = false;
+uint8_t current_ramp_value = 0;
 
 void setup() {
     Serial.begin(115200);
@@ -54,16 +63,50 @@ void setup() {
     };
     ledc_channel_config(&channelConfig);
 
+    // Configure PWM for Power Supply Control
+    ledc_timer_config_t psTimerConfig = {
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .duty_resolution = PS_PWM_RES,
+        .timer_num = LEDC_TIMER_1,
+        .freq_hz = PS_PWM_FREQ,
+        .clk_cfg = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&psTimerConfig);
+
+    ledc_channel_config_t psChannelConfig = {
+        .gpio_num = PS_CONTROL_PIN,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = PS_PWM_CHANNEL,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_1,
+        .duty = 0,
+        .hpoint = 0
+    };
+    ledc_channel_config(&psChannelConfig);
+
     // Setup Pins
     pinMode(BACKLIGHT_PIN, OUTPUT);
-    pinMode(KILL_PIN, OUTPUT);
+    pinMode(H2_SIGNAL_PIN, INPUT_PULLDOWN);
     digitalWrite(BACKLIGHT_PIN, LOW);
-    digitalWrite(KILL_PIN, HIGH);  // Start with power ON
+
+    // Initialize power supply control to 0V
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL, 0);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL);
 
     Serial.println("System Initialized");
 }
 
 void loop() {
+    // Check H2 signal
+    bool h2_signal = digitalRead(H2_SIGNAL_PIN);
+
+    // Handle PEM start/stop based on H2 signal
+    if (h2_signal && !pem_running) {
+        startPEM();
+    } else if (!h2_signal && pem_running) {
+        stopPEM();
+    }
+
     // Read float sensor resistance
     float resistance = readFloatSensorResistance(FLOAT_SENSOR_PIN);
     
@@ -89,6 +132,28 @@ void loop() {
     Serial.println(digitalRead(KILL_PIN) ? "ON" : "OFF");
 
     delay(50);
+}
+
+void startPEM() {
+    Serial.println("Starting PEM - Ramping power supply");
+    pem_running = true;
+    
+    // Ramp from 0 to full over 5 seconds
+    for (current_ramp_value = 0; current_ramp_value <= 255; current_ramp_value++) {
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL, current_ramp_value);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL);
+        delay(STEP_DELAY_MS);
+    }
+}
+
+void stopPEM() {
+    Serial.println("Stopping PEM");
+    pem_running = false;
+    
+    // Immediately set power supply control to 0
+    ledc_set_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL, 0);
+    ledc_update_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL);
+    current_ramp_value = 0;
 }
 
 // Function to read float sensor resistance using a voltage divider
@@ -117,7 +182,7 @@ int readSmoothADC(int pin) {
 void manageSafety(int pwmDuty) {
     unsigned long currentMillis = millis();
 
-    // Blink Backlight if below 150 PWM
+    // Blink Backlight if below threshold
     if (pwmDuty < BLINK_THRESHOLD) {
         if (currentMillis - lastBlinkTime >= BLINK_INTERVAL) {
             lastBlinkTime = currentMillis;
@@ -128,11 +193,20 @@ void manageSafety(int pwmDuty) {
         digitalWrite(BACKLIGHT_PIN, LOW);
     }
 
-    // Cut Power if level is too low
+    // If level is too low, shut down power supply by setting control voltage to 0
     if (pwmDuty < LOW_LEVEL_THRESHOLD) {
-        Serial.println("KILL PIN ACTIVATED! Power Off!");
-        digitalWrite(KILL_PIN, LOW);
-    } else {
-        digitalWrite(KILL_PIN, HIGH);
+        Serial.println("Low level detected! Shutting down power supply.");
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL, 0);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL);
+        pem_running = false;
+    }
+}
+
+void blinkBacklight() {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastBlinkTime >= BLINK_INTERVAL) {
+        lastBlinkTime = currentMillis;
+        blinkState = !blinkState;
+        digitalWrite(BACKLIGHT_PIN, blinkState);
     }
 }

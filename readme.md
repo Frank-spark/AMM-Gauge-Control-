@@ -1,60 +1,64 @@
-
 ---
-## **Project: ESP32 Gauge Control with Float Sensor and Safety Cutoff**
+## **Project: ESP32 Gauge Control with H2 Integration**
 
 ### **Overview**
-This project controls an **analog gauge** using an **ESP32-WROOM-32D**. The gauge reflects the **fill level of a tank**, based on readings from a **resistance-based float sensor (240Ω - 30Ω)**. It also features **a safety cutoff relay** and **a low-level warning backlight**.
+This project controls an **analog gauge** and **H2 power supply** using an **ESP32-WROOM-32D**. The gauge reflects the **fill level of a tank** based on readings from a **resistance-based float sensor (240Ω - 30Ω)**. The system implements a **soft-start feature** for H2 power supplies to prevent inrush current.
 
 ### **Features**
-✔ Reads **float sensor resistance** and converts it into a gauge display using **PWM control**.  
-✔ **Smooths the gauge movement** to prevent needle shaking.  
-✔ **Blinks a backlight** when the fill level is low.  
-✔ **Cuts power (110V AC)** when the fill level is critically low.  
-✔ Uses **noise-filtered ADC readings** for reliable measurements.
+✔ Reads **float sensor resistance** and converts it to gauge display using **PWM control**  
+✔ **Smooths the gauge movement** to prevent needle shaking  
+✔ **Blinks a backlight** when the fill level is low  
+✔ **Soft-start control** (0-5V ramping) for H2 power supplies  
+✔ **H2 signal detection** from existing H2 board  
+✔ Uses **noise-filtered ADC readings** for reliable measurements
 
 ---
 
 ## **1. Hardware Setup**
-### **🛠 Components Needed**
+### ** Components Needed**
 - **ESP32-WROOM-32D**
 - **Float Sensor (240Ω - 30Ω)**
 - **10kΩ Pull-up Resistor** (for voltage divider)
 - **Gauge (0-100% Analog Display)**
 - **IRLB8721 MOSFET** (for PWM gauge control)
-- **110V Relay (Solid-State or Mechanical)**
-- **PC817 Optocoupler** (for isolation)
-- **2N2222 Transistor** (for relay control)
+- **Level Shifter** (for 12V H2 signal input)
+- **0-5V DAC/PWM Filter** (for power supply control)
 - **330Ω Resistor + LED** (for backlight warning)
 
-### **🔌 Wiring Guide**
-#### **1️⃣ Power Supply**
+### ** Wiring Guide**
+#### **1️ Power Supply**
 | Component | Connection |
 |-----------|------------|
-| ESP32 3.3V | **3.3V Buck Converter** |
+| ESP32 VIN | **12V from H2 board gauge light** |
 | ESP32 GND | **Common Ground** |
 
-#### **2️⃣ Float Sensor (Resistance Measurement)**
+#### **2️ Float Sensor (Resistance Measurement)**
 | Pin | Connection |
-|-----|-----------|
+|-----|------------|
 | **ESP32 GPIO 34** | **Voltage divider output** |
 | **3.3V** | **10kΩ pull-up resistor** → Float Sensor |
 | **GND** | **Float Sensor Ground** |
 
-#### **3️⃣ Gauge Control (PWM Output)**
+#### **3️ Gauge Control (PWM Output)**
 | Pin | Connection |
 |-----|------------|
 | **ESP32 GPIO 25** | **MOSFET Gate (IRLB8721)** |
 | **Gauge (-)** | **MOSFET Drain** |
 | **GND** | **MOSFET Source** |
 
-#### **4️⃣ 110V AC Power Cutoff**
+#### **4️ Power Supply Control**
 | Pin | Connection |
 |-----|------------|
-| **ESP32 GPIO 27** | **Relay Module Input** |
-| **Relay NO Terminal** | **110V Load Line** |
-| **Relay COM Terminal** | **110V Power** |
+| **ESP32 GPIO 27** | **PWM Filter** → Power Supply Control |
+| **Power Supply CC** | **0-5V Control Input** |
 
-#### **5️⃣ Backlight Warning**
+#### **5️ H2 Signal Input**
+| Pin | Connection |
+|-----|------------|
+| **ESP32 GPIO 35** | **Level Shifter Output** |
+| **Level Shifter Input** | **H2 Board Coil Signal (12V)** |
+
+#### **6️ Backlight Warning**
 | Pin | Connection |
 |-----|------------|
 | **ESP32 GPIO 26** | **LED via 330Ω Resistor** |
@@ -64,19 +68,30 @@ This project controls an **analog gauge** using an **ESP32-WROOM-32D**. The gaug
 
 ## **2. Code Explanation**
 ### **⚙ Main Functionalities**
-#### **1️⃣ Setup Function**
-- Initializes **PWM control for the gauge**.
-- Sets up **GPIOs for the backlight and power relay**.
+#### **1️ Setup Function**
+- Initializes **PWM control for gauge and power supply**
+- Sets up **GPIOs for backlight and H2 signal input**
 
-#### **2️⃣ `loop()` Function**
-- Reads **float sensor resistance** via **`readFloatSensorResistance()`**.
-- Converts resistance into a **PWM signal** for the gauge.
-- **Smooths gauge movement** to avoid sudden jumps.
-- Calls **`manageSafety()`** to:
-  - **Blink backlight** if level is low.
-  - **Turn OFF power relay** if level is critically low.
+#### **2️ `loop()` Function**
+- Monitors **H2 signal** for power control
+- Reads **float sensor resistance**
+- Controls **gauge display**
+- Manages **power supply ramping**
+- Handles **low-level warnings**
 
-#### **3️⃣ Read Float Sensor Resistance**
+#### **3️ Power Supply Control**
+```cpp
+void startPEM() {
+    // Ramps power supply control from 0V to 5V over 5 seconds
+    for (current_ramp_value = 0; current_ramp_value <= 255; current_ramp_value++) {
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL, current_ramp_value);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, PS_PWM_CHANNEL);
+        delay(STEP_DELAY_MS);
+    }
+}
+```
+
+#### **4️ Read Float Sensor Resistance**
 ```cpp
 float readFloatSensorResistance(int pin) {
     int adcValue = readSmoothADC(pin);
@@ -88,10 +103,10 @@ float readFloatSensorResistance(int pin) {
     return resistance;
 }
 ```
-- Uses **Ohm’s Law** to convert voltage readings to **resistance (240Ω - 30Ω)**.
+- Uses **Ohm's Law** to convert voltage readings to **resistance (240Ω - 30Ω)**.
 - **Failsafe:** If voltage is **too low**, assumes an **empty tank (240Ω).**
 
-#### **4️⃣ Smooth ADC Readings**
+#### **5️ Smooth ADC Readings**
 ```cpp
 int readSmoothADC(int pin) {
     int total = 0;
@@ -104,46 +119,24 @@ int readSmoothADC(int pin) {
 ```
 - Averages **10 ADC samples** to **reduce noise**.
 
-#### **5️⃣ Safety Handling**
-```cpp
-void manageSafety(int pwmDuty) {
-    unsigned long currentMillis = millis();
-
-    if (pwmDuty < BLINK_THRESHOLD) {
-        if (currentMillis - lastBlinkTime >= BLINK_INTERVAL) {
-            lastBlinkTime = currentMillis;
-            blinkState = !blinkState;
-            digitalWrite(BACKLIGHT_PIN, blinkState);
-        }
-    } else {
-        digitalWrite(BACKLIGHT_PIN, LOW);
-    }
-
-    if (pwmDuty < LOW_LEVEL_THRESHOLD) {
-        Serial.println("KILL PIN ACTIVATED! Power Off!");
-        digitalWrite(KILL_PIN, LOW);
-    } else {
-        digitalWrite(KILL_PIN, HIGH);
-    }
-}
-```
-- **Flashes backlight** when fill level is low.
-- **Turns OFF 110V relay** if level is critically low.
+#### **6️ Safety Handling**
+- **Flashes backlight** when fill level is low
+- **Shuts down power supply** by setting control voltage to 0V if level is critically low
 
 ---
 
 ## **3. Expected Behavior**
-| **Tank Level (%)** | **Float Sensor Resistance (Ω)** | **PWM Duty (Gauge)** | **Backlight (GPIO 26)** | **Power Relay (GPIO 27)** |
-|--------------------|--------------------------------|----------------------|------------------------|------------------------|
-| **100% (Full)**   | 30Ω                            | 225                  | OFF                    | ON (Power OK)         |
-| **50% (Half)**    | 135Ω                           | 180                  | OFF                    | ON (Power OK)         |
-| **20% (Low)**     | 200Ω                           | 150                  | **BLINKING**           | ON (Power OK)         |
-| **5% (Critical)** | 240Ω                           | 140                  | **BLINKING**           | **OFF (Power Cut)**   |
+| **Event** | **Action** | **Response** |
+|-----------|------------|--------------|
+| **H2 Signal ON** | 12V on GPIO 35 | Start 5-second power supply ramp |
+| **H2 Signal OFF** | 0V on GPIO 35 | Immediate power supply shutdown |
+| **Low Tank Level** | PWM < 150 | Backlight starts blinking |
+| **Normal Operation** | PWM > 150 | Normal gauge display |
 
 ---
 
 ## **4. Installation & Usage**
-### **📥 Uploading Code**
+### ** Uploading Code**
 1. Open **Arduino IDE**.
 2. Install **ESP32 Board Support** via **Boards Manager**.
 3. Connect **ESP32-WROOM-32D** to USB.
@@ -167,18 +160,19 @@ void manageSafety(int pwmDuty) {
 ---
 
 ## **5. Troubleshooting**
-| **Issue**                    | **Possible Fix** |
-|------------------------------|------------------|
-| Gauge is **not moving** | Check if **PWM is set properly** in Serial Monitor (`PWM: X`). |
-| Gauge **jumps suddenly** | Increase **smoothing factor** in `smoothedDuty = (0.05 * target) + (0.95 * smoothedDuty);` |
-| Backlight **never blinks** | Verify **pwmDuty < 150** in `manageSafety()`. |
-| Power **does not cut off** | Ensure **KILL_PIN (GPIO 27)** is correctly wired to the relay. |
+| **Issue** | **Possible Fix** |
+|-----------|------------------|
+| **Power supply not ramping** | Check PWM filter circuit and 0-5V output |
+| **H2 signal not detected** | Verify level shifter operation and 12V input |
+| **Gauge not moving** | Check MOSFET and PWM output |
+| **Backlight issues** | Verify LED connections and GPIO 26 |
 
 ---
 
 ## **6. Future Improvements**
-🔹 Add **thermistor-based power cutoff** for temperature safety.  
-
+🔹 Add **feedback monitoring** from power supply  
+🔹 Implement **communication with H2 board**  
+🔹 Add **diagnostic LED indicators**
 
 ---
 
