@@ -7,6 +7,8 @@
 #define PS_CONTROL_PIN 27    // 0-5V control for power supply
 #define FLOAT_SENSOR_PIN 34  // Reads float sensor voltage
 #define H2_SIGNAL_PIN 35     // Input from H2 board coil plug (12V)
+#define I2C_SDA_PIN 21        // I2C Data (reserved for future use)
+#define I2C_SCL_PIN 22        // I2C Clock (reserved for future use)
 
 // PWM Configuration
 #define PWM_FREQUENCY 5000  // PWM frequency in Hz
@@ -41,6 +43,10 @@ uint8_t current_ramp_value = 0;
 
 void setup() {
     Serial.begin(115200);
+
+    // Reserve I2C pins for future use
+    pinMode(I2C_SDA_PIN, INPUT);
+    pinMode(I2C_SCL_PIN, INPUT);
 
     // Configure PWM for Gauge Control
     ledc_timer_config_t timerConfig = {

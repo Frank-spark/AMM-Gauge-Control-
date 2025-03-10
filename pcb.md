@@ -72,18 +72,60 @@ This board layout is designed to interface an ESP32-WROOM-32D with a float senso
 
 * * *
 
-### ESP32-WROOM-32D Pin Assignments
+## 7\. Future Expansion - I2C Interface
+
+*   I2C Connector:
+    *   4-pin header (3.3V, GND, SDA, SCL)
+    *   Pin Assignment:
+        *   GPIO 21: SDA
+        *   GPIO 22: SCL
+    *   Pull-up Resistors:
+        *   2x 4.7kΩ resistors (one each for SDA and SCL)
+    *   Protection:
+        *   Optional TVS diodes for signal protection
+    *   Connector Type:
+        *   JST-XH or similar 2.54mm pitch header
+        *   Keyed to prevent incorrect insertion
+
+### Updated ESP32-WROOM-32D Pin Assignments
 
 | ESP32 Pin | Function | Connected To |
 |-----------|----------|--------------|
 | VIN | Power Input | 12V (via protection diode) |
 | 3.3V | Regulated Power | 3.3V from Buck Converter |
 | GND | Ground | Common Ground |
+| GPIO 21 | I2C SDA | I2C Connector (with 4.7kΩ pullup) |
+| GPIO 22 | I2C SCL | I2C Connector (with 4.7kΩ pullup) |
 | GPIO 34 | ADC Input | Float Sensor Voltage Divider |
 | GPIO 35 | Digital Input | H2 Signal (via level shifter) |
 | GPIO 25 | PWM Output | Gauge MOSFET Gate |
 | GPIO 27 | PWM Output | Power Supply Control Circuit |
 | GPIO 26 | Digital Output | Warning LED |
+
+### I2C Connector Pinout
+
+```
+1 - 3.3V
+2 - SDA (GPIO 21)
+3 - SCL (GPIO 22)
+4 - GND
+```
+
+### PCB Layout Considerations for I2C
+
+1. **Signal Routing:**
+    * Keep I2C traces short and equal length
+    * Route SDA and SCL close together
+    * Avoid crossing noisy signals
+
+2. **Pull-up Resistors:**
+    * Place 4.7kΩ pull-ups near the ESP32
+    * Use 0603 or 0805 package size
+
+3. **Connector Placement:**
+    * Edge-mounted for easy access
+    * Away from power components
+    * Clear labeling for pin 1
 
 * * *
 

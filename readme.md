@@ -24,6 +24,8 @@ This project controls an **analog gauge** and **H2 power supply** using an **ESP
 - **Level Shifter** (for 12V H2 signal input)
 - **0-5V DAC/PWM Filter** (for power supply control)
 - **330Ω Resistor + LED** (for backlight warning)
+- **4-pin I2C Connector** (for future expansion)
+- **2x 4.7kΩ Pull-up Resistors** (for I2C)
 
 ### ** Wiring Guide**
 #### **1️ Power Supply**
@@ -63,6 +65,14 @@ This project controls an **analog gauge** and **H2 power supply** using an **ESP
 |-----|------------|
 | **ESP32 GPIO 26** | **LED via 330Ω Resistor** |
 | **GND** | **LED Cathode (-)** |
+
+#### **7️ I2C Expansion Port**
+| Pin | Connection |
+|-----|------------|
+| **1** | **3.3V** |
+| **2** | **GPIO 21 (SDA) with 4.7kΩ pull-up** |
+| **3** | **GPIO 22 (SCL) with 4.7kΩ pull-up** |
+| **4** | **GND** |
 
 ---
 
@@ -172,7 +182,9 @@ int readSmoothADC(int pin) {
 ## **6. Future Improvements**
 🔹 Add **feedback monitoring** from power supply  
 🔹 Implement **communication with H2 board**  
-🔹 Add **diagnostic LED indicators**
+🔹 Add **diagnostic LED indicators**  
+🔹 Add **I2C sensors or displays**  
+🔹 Implement **I2C communication with external devices**
 
 ---
 
