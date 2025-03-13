@@ -33,6 +33,7 @@ This project controls an **analog gauge** and **H2 power supply** using an **ESP
 |-----------|------------|
 | ESP32 VIN | **12V from H2 board gauge light** |
 | ESP32 GND | **Common Ground** |
+ 12V to 5V Buck Converters:
 
 #### **2️ Float Sensor (Resistance Measurement)**
 | Pin | Connection |
@@ -75,6 +76,43 @@ This project controls an **analog gauge** and **H2 power supply** using an **ESP
 | **4** | **GND** |
 
 ---
+Here is a **README** section for the **power supply selection** in your AMM-Gauge-Control project:  
+
+---
+
+## **Power Supply Selection**
+
+This project requires efficient **DC-DC buck converters** to step down **12V** to the required operating voltages (**5V** and **3.3V**). Below are the recommended surface-mount buck converters:
+
+### **12V to 5V Buck Converters**
+1. **Texas Instruments LM2675**  
+   - Step-down voltage regulator with **1A** output.  
+   - High efficiency, low component count.  
+   - Ideal for powering microcontrollers and peripherals.  
+   - [Datasheet](https://www.ti.com/lit/ds/symlink/lm2675.pdf)  
+
+2. **Murata Power Solutions OKI-78SR-5/1.5-W36H-C**  
+   - Drop-in replacement for traditional **78xx linear regulators**.  
+   - Delivers **5V at up to 1.5A** with minimal heat dissipation.  
+   - [Datasheet](https://power.murata.com/pub/data/power/oki-78sr.pdf)  
+
+### **12V to 3.3V Buck Converters**
+1. **Texas Instruments TPS54331**  
+   - Integrated **3A** step-down regulator with **28V input capability**.  
+   - Optimized for high efficiency in embedded systems.  
+   - [Datasheet](https://www.ti.com/lit/ds/symlink/tps54331.pdf)  
+
+2. **Analog Devices LTC3621**  
+   - **1A synchronous buck converter** with **17V input capability**.  
+   - Compact and energy-efficient for low-power applications.  
+   - [Datasheet](https://www.analog.com/media/en/technical-documentation/data-sheets/LTC3621.pdf)  
+
+### **Selection Considerations**
+- **Current Requirements**: Choose a regulator based on the total current draw of your circuits.  
+- **Efficiency**: Higher efficiency reduces heat and improves system stability.  
+- **Footprint**: Ensure the selected components fit within the PCB layout.  
+- **Availability**: Check supplier stock (e.g., [Digi-Key](https://www.digikey.com/) or [Mouser](https://www.mouser.com/)) before finalizing.  
+
 
 ## **2. Code Explanation**
 ### **⚙ Main Functionalities**
