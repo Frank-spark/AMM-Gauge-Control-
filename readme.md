@@ -11,7 +11,8 @@ This project controls an **analog gauge** and **H2 power supply** using an **ESP
 ✔ **Soft-start control** (0-5V ramping) for H2 power supplies  
 ✔ **H2 signal detection** from existing H2 board  
 ✔ Uses **noise-filtered ADC readings** for reliable measurements
-
+✔ **12V to 3.3V Buck Converter**
+✔ **12V to 5V Buck Converter**
 ---
 
 ## **1. Hardware Setup**
