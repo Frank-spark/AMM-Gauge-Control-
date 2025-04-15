@@ -64,7 +64,7 @@ This project controls an **analog gauge** and **H2 power supply** using an **ESP
 #### **5️ H2 Signal Input**
 | Pin | Connection |
 |-----|------------|
-| **ESP32 GPIO 35** | **Level Shifter Output** |
+| **ESP32 GPIO 35** | **Level Shifter Output 10k and 39k VD** |
 | **Level Shifter Input** | **H2 Board Coil Signal (12V)** |
 
 #### **6️ Backlight Warning**
